@@ -369,8 +369,8 @@ svg{display:block}
   .btn{animation:pulse 2.8s 1.6s ease-out infinite}
   .btn::after{animation:sheen 4.2s 2s ease-in-out infinite}
   .btn__ico svg{animation:poke 2.2s 1.8s ease-in-out infinite}
-  .btn:hover{animation:none}
-  .btn:hover .btn__ico svg{animation:none}
+  .bar .btn:hover{animation:none}
+  .bar .btn:hover .btn__ico svg{animation:none}
   .lead:hover{transform:translateY(-3px);box-shadow:0 36px 80px -40px rgba(16,34,30,.4), 0 2px 8px -4px rgba(16,34,30,.06)}
   /* Sarlavhadagi telefon — vaqti-vaqti bilan "jiringlaydi" */
   .top__phone svg{animation:ring 4s 2.5s ease-in-out infinite}
@@ -384,6 +384,16 @@ svg{display:block}
   @keyframes markIn{to{opacity:.045}}
   @keyframes float{0%{transform:translateY(-8px)}100%{transform:translateY(10px)}}
 }
+/* Kirish animatsiyasi tugagandan keyin ko'rinish undan MUSTAQIL bo'ladi.
+   `opacity:0 + animation:forwards` naqshi ikki holatda buziladi:
+   (1) biror qoida `animation` ni almashtirsa (masalan .btn:hover{animation:none}),
+   (2) sahifa fon tabda ochilsa — animatsiya muzlab, element 0% da qoladi.
+   Shu sababli JS 1.8s dan keyin .entered qo'yadi va opacity qat'iy 1 bo'ladi. */
+.lead.entered .field,
+.lead.entered .btn,
+.lead.entered .lead__note{opacity:1;animation:none}
+.lead.is-done.done-shown .lead__done>*{opacity:1;animation:none}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition-duration:.01ms!important}
   .lead__check path{stroke-dashoffset:0}
@@ -570,6 +580,12 @@ svg{display:block}
                   branch:document.getElementById('d-branch'),
                   phone: document.getElementById('d-phone')};
 
+  /* Kirish animatsiyasi oynasi (eng kechi: .lead__note, 0.92s + 0.6s) tugagach
+     forma elementlarining ko'rinishini animatsiyadan uzib qo'yamiz — batafsil
+     izoh CSS dagi `.lead.entered` qoidasi yonida. Fon tabda taymer sekinlashadi,
+     lekin baribir ishga tushadi, shuning uchun element hech qachon yo'qolmaydi. */
+  setTimeout(function(){ form.classList.add('entered'); }, 1800);
+
   function syncEmpty(sel){ sel.classList.toggle('is-empty', !sel.value); }
   [course, branch].forEach(function(sel){
     syncEmpty(sel);
@@ -661,6 +677,7 @@ svg{display:block}
       recap.branch.textContent = payload.branch;
       recap.phone.textContent  = pretty;
       form.classList.add('is-done');
+      setTimeout(function(){ form.classList.add('done-shown'); }, 900);
       submit.disabled = false; submit.classList.remove('is-loading');
       /* Sahifa ATAYLAB surilmaydi: forma va bu ekran bitta grid katakda,
          karta balandligi o'zgarmaydi — hech narsa qimirlamasligi kerak. */
@@ -683,7 +700,7 @@ svg{display:block}
   });
 
   document.getElementById('f-again').addEventListener('click', function(){
-    form.classList.remove('is-done');
+    form.classList.remove('is-done','done-shown');
     form.reset(); syncEmpty(course); syncEmpty(branch); syncMask();
     hideWarn(); alertBox.classList.remove('is-on');
     [name, phone, course, branch].forEach(clearError);
