@@ -332,8 +332,7 @@ svg{display:block}
   position:fixed;left:0;right:0;bottom:0;z-index:50;
   display:none;gap:10px;
   padding:10px 16px calc(10px + env(safe-area-inset-bottom));
-  background:rgba(255,255,255,.94);
-  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  background:var(--white);
   border-top:1px solid var(--border);
   transform:translateY(110%);
   transition:transform .35s var(--ease);
@@ -421,7 +420,10 @@ svg{display:block}
   .done__call{margin-top:16px;height:50px}
   .done__again{margin-top:12px}
   .bar{display:flex}
-  body{padding-bottom:84px}
+  /* Pastki panel uchun joy FAQAT panel chiqqanda ajratiladi (JS .has-bar qo'yadi).
+     Aks holda sahifa pastida 84px sof bo'sh joy qolardi. */
+  body{padding-bottom:0}
+  body.has-bar{padding-bottom:84px}
 }
 @media (max-width:560px){
   .logo{width:156px}
@@ -713,11 +715,13 @@ svg{display:block}
     new IntersectionObserver(function(entries){
       var visible = entries[0].isIntersecting;
       bar.classList.toggle('is-on', !visible);
+      document.body.classList.toggle('has-bar', !visible);
       bar.setAttribute('aria-hidden', visible ? 'true' : 'false');
       bar.querySelectorAll('a').forEach(function(a){ a.tabIndex = visible ? -1 : 0; });
     }, {threshold: 0.2}).observe(form);
   } else {
     bar.classList.add('is-on');
+    document.body.classList.add('has-bar');
   }
 })();
 </script>
