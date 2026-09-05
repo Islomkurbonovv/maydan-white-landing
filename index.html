@@ -50,7 +50,7 @@
      color-scheme — iOS ning avtomatik tuslashini to'xtatadi
      min-height   — oq fon doim to'liq ekranni qoplaydi
    body dagi overscroll-behavior-y:none esa cho'zilishning o'zini o'chiradi. */
-html{-webkit-text-size-adjust:100%;scroll-padding-top:88px;background:var(--page);color-scheme:light;min-height:100%}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:88px;background:var(--page);color-scheme:light;min-height:100%;overscroll-behavior-y:none}
 @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
 body{
   margin:0;
@@ -422,7 +422,10 @@ svg{display:block}
      "ikkinchi fon" bo'lib ko'rinardi. Mobilda dekorativ qatlamlar o'chiriladi
      va karta foni shaffof qilinadi: butun sahifa bitta tekis oq. */
   .stage__glow,.stage__mark{display:none}
-  .lead{border:0;padding:0;box-shadow:none;border-radius:0;background:transparent}
+  /* Butun zanjirga aniq oq — sahifa ichida ikkinchi rang beradigan
+     element qolmasligi kafolatlanadi. */
+  main,.stage,.container,.card,.lead__body,.lead__done{background:var(--page)}
+  .lead{border:0;padding:0;box-shadow:none;border-radius:0;background:var(--page)}
   .input,.select,.phone,.btn{height:62px}
   /* Muvaffaqiyat ekrani mobilda: karta chegarasi yo'q, shuning uchun
      o'z nafas oladigan joyi va yumshoq foni bo'lsin */
