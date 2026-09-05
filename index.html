@@ -67,7 +67,11 @@ svg{display:block}
 /* ============================================================
    HEADER
    ============================================================ */
-.top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+/* Sticky sarlavha. backdrop-filter ATAYLAB ishlatilmagan: iOS Safari'da sticky
+   element ustidagi blur momentum-skroll paytida qayta chizilmaydi va ostidagi
+   matn "yirtilib" ko'rinadi. Sahifa foni oq, shuning uchun to'liq oq fon
+   vizual jihatdan aynan bir xil, lekin barqaror. */
+.top{position:sticky;top:0;z-index:40;background:var(--white)}
 .top__in{display:flex;align-items:center;justify-content:space-between;gap:24px;height:var(--header)}
 .logo{display:block;width:190px;height:auto;color:var(--green)}
 .logo svg{width:100%;height:auto;fill:currentColor}
@@ -121,11 +125,16 @@ svg{display:block}
 .sub{margin-top:18px;max-width:46ch;font-size:clamp(16px,1.3vw,17.5px);color:var(--ink-2)}
 
 /* O'ng ustun — forma kartasi */
+/* Forma va "qabul qilindi" holati bitta grid katakda ustma-ust turadi.
+   Shu sababli karta balandligi ikkalasining kattasiga teng bo'lib QOTADI —
+   ariza yuborilganda sahifa sakramaydi. */
 .lead{
   background:var(--white);border:1px solid var(--border);border-radius:24px;
   padding:clamp(22px,2.6vw,32px);
   box-shadow:0 30px 70px -40px rgba(16,34,30,.35), 0 2px 8px -4px rgba(16,34,30,.06);
+  display:grid;
 }
+.lead__body,.lead__done{grid-column:1;grid-row:1;min-width:0}
 .field{margin-top:14px}
 .field:first-child{margin-top:0}
 .input,.select{
@@ -173,7 +182,13 @@ svg{display:block}
 .field.is-error .phone .input{border:0;box-shadow:none;background-color:transparent}
 .field__err{display:none;margin:6px 0 0 22px;font-size:13.5px;color:#B3261E}
 .field.is-error .field__err{display:block}
-.field.is-error.shake{animation:shake .4s var(--ease)}
+/* Silkinish ATAYLAB .field ning O'ZIGA emas, ichidagi maydonga qo'llanadi.
+   Sabab: `.lead .field` da kirish animatsiyasi bor (opacity:0 + fadeUp forwards).
+   Agar `.field` ga `animation:shake` berilsa, u fadeUp ni ALMASHTIRADI va shake
+   tugagach maydon o'zining asosiy `opacity:0` holatiga qaytib, BUTUNLAY YO'QOLADI. */
+.field.is-error.shake .input,
+.field.is-error.shake .select,
+.field.is-error.shake .phone{animation:shake .4s var(--ease)}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
 
 /* Tugma — pill, chapda oltin doira ichida strelka */
@@ -203,20 +218,6 @@ svg{display:block}
 .input:hover,.select:hover,.phone:hover{transform:translateY(-1px)}
 .input,.select,.phone{transition:border-color .25s var(--ease),box-shadow .25s var(--ease),background-color .25s var(--ease),transform .25s var(--ease)}
 .btn[disabled]{cursor:progress;transform:none;box-shadow:none}
-/* Forma to'liq to'ldirilmaguncha tugma o'chirilgan va xira turadi.
-   :not(.is-loading) — yuborish paytidagi ko'rinish (cursor:progress + spinner) o'zgarmasin.
-   Xiralashtirishda `opacity` emas, `filter` ishlatilgan: `.lead .btn` ga fadeUp animatsiyasi
-   `forwards` bilan qo'llanadi va opacity ni 1 ga majburlaydi — oddiy `opacity:.5` e'loni
-   animatsiya tomonidan bekor qilinardi. `filter` animatsiya qilinmaydi, shuning uchun ishlaydi. */
-.btn:disabled:not(.is-loading),
-.btn[disabled]:not(.is-loading){
-  cursor:not-allowed;filter:opacity(.5) grayscale(.15);
-  box-shadow:none;transform:none;
-}
-.btn:disabled:not(.is-loading):hover,
-.btn[disabled]:not(.is-loading):hover{background:var(--green);transform:none;box-shadow:none}
-.btn:disabled:not(.is-loading):hover .btn__ico,
-.btn[disabled]:not(.is-loading):hover .btn__ico{transform:none;background:var(--gold)}
 .btn.is-loading .btn__ico svg{display:none}
 .btn.is-loading .btn__ico::after{
   content:"";width:20px;height:20px;border-radius:50%;
@@ -232,27 +233,96 @@ svg{display:block}
   display:none;margin-top:14px;padding:12px 14px;border-radius:12px;
   background:#FBEAE8;color:#8C1D16;font-size:14.5px;
 }
+/* Forma to'liq to'ldirilmay yuborilganda chiqadigan ogohlantirish.
+   Tugma hech qachon o'chirilmaydi — foydalanuvchi bosadi va NIMA yetishmayotganini biladi. */
+.lead__warn{
+  display:none;align-items:flex-start;gap:10px;
+  margin-top:14px;padding:12px 14px;border-radius:12px;
+  background:#FDF6E3;color:#7A5B12;font-size:14.5px;line-height:1.45;
+}
+.lead__warn.is-on{display:flex;animation:fadeUp .3s var(--ease)}
+.lead__warn svg{width:18px;height:18px;flex:0 0 auto;margin-top:1px}
+.lead__warn b{font-weight:600}
 .lead__alert.is-on{display:block;animation:fadeUp .35s var(--ease)}
 .lead__alert a{color:inherit;font-weight:600;white-space:nowrap}
 
-/* Muvaffaqiyat holati */
-.lead__done{display:none;text-align:center;padding:18px 0 8px}
-.lead.is-done .lead__body{display:none}
-.lead.is-done .lead__done{display:block;animation:fadeUp .5s var(--ease)}
+/* ── Muvaffaqiyat holati ──────────────────────────────────────────
+   Forma bilan bitta grid katakda: display:none EMAS, balki opacity+visibility
+   bilan almashinadi — shuning uchun karta balandligi o'zgarmaydi, sahifa sakramaydi.
+   Ichida: nishon -> sarlavha -> shaxsiy jumla -> ariza xulosasi -> qo'ng'iroq -> qayta yozish. */
+.lead__body{transition:opacity .3s var(--ease),visibility .3s}
+.lead.is-done .lead__body{opacity:0;visibility:hidden;pointer-events:none}
+.lead__done{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:8px 0;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .45s .12s var(--ease),visibility .45s;
+}
+.lead.is-done .lead__done{opacity:1;visibility:visible;pointer-events:auto}
+
+/* Nishon: oltin halqa + yashil belgi */
 .lead__check{
-  width:64px;height:64px;margin:0 auto 18px;border-radius:50%;
-  background:var(--green-100);color:var(--green);
+  position:relative;width:76px;height:76px;margin:0 0 20px;border-radius:50%;
+  background:var(--green-50);color:var(--green);
   display:flex;align-items:center;justify-content:center;
 }
-.lead.is-done .lead__check{animation:pop .6s var(--spring)}
-.lead__check svg{width:30px;height:30px}
+.lead__check::before{
+  content:"";position:absolute;inset:-7px;border-radius:50%;
+  border:1.5px solid var(--gold);opacity:.55;
+}
+.lead.is-done .lead__check{animation:pop .6s .1s var(--spring) both}
+.lead.is-done .lead__check::before{animation:ringIn .8s .2s var(--ease) both}
+.lead__check svg{width:32px;height:32px}
 .lead__check path{stroke-dasharray:24;stroke-dashoffset:24}
-.lead.is-done .lead__check path{animation:draw .5s .25s var(--ease) forwards}
-@keyframes pop{from{transform:scale(.4)}to{transform:scale(1)}}
+.lead.is-done .lead__check path{animation:draw .5s .45s var(--ease) forwards}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes ringIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:.55}}
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.lead__done h2{font-size:24px;font-weight:600;letter-spacing:-.02em}
-.lead__done p{margin-top:10px;color:var(--ink-2)}
+
+.lead__done h2{font-size:clamp(22px,2.2vw,26px);font-weight:600;letter-spacing:-.022em;line-height:1.2}
+.done__lead{margin-top:10px;max-width:34ch;color:var(--ink-2);font-size:15.5px;line-height:1.5}
+.done__lead b{color:var(--ink);font-weight:600;white-space:nowrap}
+
+/* Ariza xulosasi — nozik chiziqli ro'yxat */
+.done__recap{
+  width:100%;max-width:340px;margin:22px 0 0;
+  border:1px solid var(--border);border-radius:16px;background:var(--green-50);
+  padding:4px 16px;text-align:left;
+}
+.done__recap>div{
+  display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  padding:11px 0;border-top:1px solid rgba(33,102,88,.1);
+}
+.done__recap>div:first-child{border-top:0}
+.done__recap dt{flex:0 0 auto;color:var(--ink-3);font-size:13.5px}
+.done__recap dd{
+  margin:0;text-align:right;color:var(--ink);font-weight:600;font-size:14.5px;
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+}
+
+/* Keyingi qadam — hoziroq qo'ng'iroq */
+.done__call{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  margin-top:20px;height:52px;padding:0 24px;border-radius:999px;
+  border:1.5px solid rgba(33,102,88,.3);background:var(--white);color:var(--green);
+  font-weight:600;font-size:15.5px;text-decoration:none;white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+  transition:background .25s var(--ease),border-color .25s var(--ease),transform .25s var(--ease);
+  -webkit-tap-highlight-color:transparent;
+}
+.done__call:hover{background:var(--green-50);border-color:var(--green);transform:translateY(-1px)}
+.done__call:active{transform:translateY(0)}
+.done__call svg{width:18px;height:18px}
+.done__again{margin-top:16px}
+
+/* Ichki elementlarning ketma-ket paydo bo'lishi */
+.lead.is-done .lead__done>*:not(.lead__check){animation:fadeUp .5s var(--ease) both}
+.lead.is-done .lead__done h2{animation-delay:.30s}
+.lead.is-done .lead__done .done__lead{animation-delay:.37s}
+.lead.is-done .lead__done .done__recap{animation-delay:.44s}
+.lead.is-done .lead__done .done__call{animation-delay:.51s}
+.lead.is-done .lead__done .done__again{animation-delay:.58s}
 .link{background:none;border:0;padding:0;color:var(--green);font-weight:500;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
 
 /* ============================================================
@@ -329,6 +399,17 @@ svg{display:block}
   .sub{font-size:18px}
   .lead{border:0;padding:0;box-shadow:none;border-radius:0}
   .input,.select,.phone,.btn{height:62px}
+  /* Muvaffaqiyat ekrani mobilda: karta chegarasi yo'q, shuning uchun
+     o'z nafas oladigan joyi va yumshoq foni bo'lsin */
+  .lead__done{
+    padding:18px 16px;border-radius:20px;
+    background:linear-gradient(180deg,var(--white),var(--green-50));
+    border:1px solid var(--border);
+  }
+  .lead__check{width:68px;height:68px;margin-bottom:16px}
+  .done__recap{max-width:100%;margin-top:18px}
+  .done__call{margin-top:16px;height:50px}
+  .done__again{margin-top:12px}
   .bar{display:flex}
   body{padding-bottom:84px}
 }
@@ -423,19 +504,29 @@ svg{display:block}
               <p class="field__err" role="alert">Filialni tanlang.</p>
             </div>
 
-            <button class="btn" type="submit" id="f-submit" disabled>
+            <button class="btn" type="submit" id="f-submit">
               <span class="btn__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
               <span class="btn__label">Ro'yxatdan o'tish</span>
             </button>
+            <p class="lead__warn" role="alert" id="f-warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg><span id="f-warn-text"></span></p>
             <p class="lead__alert" role="alert" id="f-alert">Yuborilmadi. Qayta urinib ko'ring yoki qo'ng'iroq qiling: <a href="tel:+998785550330">+998 78 555 03 30</a></p>
             <p class="lead__note">Tugmani bosib, shaxsiy ma'lumotlarni qayta ishlashga rozilik bildirasiz.</p>
           </div>
 
           <div class="lead__done" aria-live="polite">
             <div class="lead__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
-            <h2>Ma'lumotlaringiz qabul qilindi</h2>
-            <p id="f-done-text">Menejerlarimiz tez orada siz bilan bog'lanishadi.</p>
-            <p style="margin-top:18px"><button type="button" class="link" id="f-again">Yana bir kishini yozish</button></p>
+            <h2>Arizangiz qabul qilindi</h2>
+            <p class="done__lead" id="f-done-text">Rahmat! Menejerlarimiz ish vaqtida qo'ng'iroq qilib, batafsil ma'lumot berishadi.</p>
+            <dl class="done__recap">
+              <div><dt>Kurs</dt><dd id="d-course">&mdash;</dd></div>
+              <div><dt>Filial</dt><dd id="d-branch">&mdash;</dd></div>
+              <div><dt>Telefon</dt><dd id="d-phone">&mdash;</dd></div>
+            </dl>
+            <a class="done__call" href="tel:+998785550330">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.8 2z"/></svg>
+              Hoziroq qo'ng'iroq qilish
+            </a>
+            <p class="done__again"><button type="button" class="link" id="f-again">Yana bir kishini yozish</button></p>
           </div>
         </form>
 
@@ -472,12 +563,17 @@ svg{display:block}
   var branch = document.getElementById('f-branch');
   var submit = document.getElementById('f-submit');
   var alertBox = document.getElementById('f-alert');
+  var warnBox  = document.getElementById('f-warn');
+  var warnText = document.getElementById('f-warn-text');
   var doneText = document.getElementById('f-done-text');
+  var recap    = {course:document.getElementById('d-course'),
+                  branch:document.getElementById('d-branch'),
+                  phone: document.getElementById('d-phone')};
 
   function syncEmpty(sel){ sel.classList.toggle('is-empty', !sel.value); }
   [course, branch].forEach(function(sel){
     syncEmpty(sel);
-    sel.addEventListener('change', function(){ syncEmpty(sel); clearError(sel); refreshSubmit(); });
+    sel.addEventListener('change', function(){ syncEmpty(sel); clearError(sel); refreshWarn(); });
   });
 
   /* Telefon maskasi: 90 123 45 67 */
@@ -492,7 +588,7 @@ svg{display:block}
     phone.value = out;
     syncMask();
     clearError(phone);
-    refreshSubmit();
+    refreshWarn();
   });
   /* Format doim ko'rinib turadi: yozilgan qism ustida raqam, qolgani chiziqcha */
   var MASK = '__ ___ __ __';
@@ -500,7 +596,9 @@ svg{display:block}
   var phoneWrap = phone.parentNode;
   function syncMask(){ typedEl.textContent = phone.value; restEl.textContent = MASK.slice(phone.value.length); phoneWrap.classList.toggle('has-value', phone.value.length > 0); }
   syncMask();
-  name.addEventListener('input', function(){ clearError(name); refreshSubmit(); });
+  name.addEventListener('input', function(){ clearError(name); refreshWarn(); });
+  /* Ogohlantirish ko'rinib turgan bo'lsa, foydalanuvchi tuzatgan sari yangilanadi */
+  function refreshWarn(){ if (warnBox.classList.contains('is-on')) showWarn(); }
 
   function fieldOf(el){ return el.closest('.field'); }
   function setError(el){
@@ -518,20 +616,32 @@ svg{display:block}
     return ok;
   }
 
-  /* Tugma faqat hamma majburiy maydon to'g'ri to'ldirilganda faollashadi */
-  function formValid(){
-    return name.value.trim() !== '' &&
-           phone.value.replace(/\D/g,'').length === 9 &&
-           course.value !== '' &&
-           branch.value !== '';
+  /* Tugma HECH QACHON o'chirilmaydi. Foydalanuvchi bosadi — va nimasi
+     yetishmayotganini aniq o'qiydi. O'chirilgan tugma "nega bosilmayapti?"
+     degan savol qoldiradi, bu esa aniq javob beradi. */
+  function missingFields(){
+    var m = [];
+    if (!name.value.trim()) m.push('ismingiz');
+    if (phone.value.replace(/\D/g,'').length !== 9) m.push('telefon raqamingiz');
+    if (!course.value) m.push('kurs');
+    if (!branch.value) m.push('filial');
+    return m;
   }
-  function refreshSubmit(){ submit.disabled = !formValid(); }
-  refreshSubmit(); // sahifa yuklanganda boshlang'ich holat
+  function showWarn(){
+    var m = missingFields(), n = m.length;
+    if (!n) { hideWarn(); return; }
+    var list = n === 1 ? m[0] : m.slice(0,-1).join(', ') + ' va ' + m[n-1];
+    warnText.innerHTML = "Ariza yuborilmadi \u2014 <b>" + list + "</b> to'ldirilmagan. "
+                       + (n === 1 ? "Shu maydonni to'ldiring." : "Shu maydonlarni to'ldiring.");
+    warnBox.classList.add('is-on');
+  }
+  function hideWarn(){ warnBox.classList.remove('is-on'); }
 
   form.addEventListener('submit', function(e){
     e.preventDefault();
     alertBox.classList.remove('is-on');
-    if (!validate()) return;
+    if (!validate()) { showWarn(); return; }
+    hideWarn();
 
     var payload = {
       name: name.value.trim(),
@@ -546,11 +656,16 @@ svg{display:block}
 
     function done(){
       var pretty = payload.phone.replace(/(\+998)(\d{2})(\d{3})(\d{2})(\d{2})/,'$1\u00A0$2\u00A0$3\u00A0$4\u00A0$5');
-      doneText.textContent = 'Rahmat, ' + payload.name + "! Menejerlarimiz tez orada " + pretty + " raqamiga qo'ng'iroq qilishadi.";
+      doneText.innerHTML = 'Rahmat, <b>' + esc(payload.name) + "</b>! Menejerlarimiz ish vaqtida qo'ng'iroq qilib, batafsil ma'lumot berishadi.";
+      recap.course.textContent = payload.course;
+      recap.branch.textContent = payload.branch;
+      recap.phone.textContent  = pretty;
       form.classList.add('is-done');
       submit.disabled = false; submit.classList.remove('is-loading');
-      form.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block:'nearest'});
+      /* Sahifa ATAYLAB surilmaydi: forma va bu ekran bitta grid katakda,
+         karta balandligi o'zgarmaydi — hech narsa qimirlamasligi kerak. */
     }
+    function esc(t){ var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
     function fail(){
       alertBox.classList.add('is-on');
       submit.disabled = false; submit.classList.remove('is-loading');
@@ -569,7 +684,9 @@ svg{display:block}
 
   document.getElementById('f-again').addEventListener('click', function(){
     form.classList.remove('is-done');
-    form.reset(); syncEmpty(course); syncEmpty(branch); syncMask(); refreshSubmit();
+    form.reset(); syncEmpty(course); syncEmpty(branch); syncMask();
+    hideWarn(); alertBox.classList.remove('is-on');
+    [name, phone, course, branch].forEach(clearError);
     name.focus();
   });
 
