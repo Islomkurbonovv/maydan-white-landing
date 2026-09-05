@@ -203,6 +203,20 @@ svg{display:block}
 .input:hover,.select:hover,.phone:hover{transform:translateY(-1px)}
 .input,.select,.phone{transition:border-color .25s var(--ease),box-shadow .25s var(--ease),background-color .25s var(--ease),transform .25s var(--ease)}
 .btn[disabled]{cursor:progress;transform:none;box-shadow:none}
+/* Forma to'liq to'ldirilmaguncha tugma o'chirilgan va xira turadi.
+   :not(.is-loading) — yuborish paytidagi ko'rinish (cursor:progress + spinner) o'zgarmasin.
+   Xiralashtirishda `opacity` emas, `filter` ishlatilgan: `.lead .btn` ga fadeUp animatsiyasi
+   `forwards` bilan qo'llanadi va opacity ni 1 ga majburlaydi — oddiy `opacity:.5` e'loni
+   animatsiya tomonidan bekor qilinardi. `filter` animatsiya qilinmaydi, shuning uchun ishlaydi. */
+.btn:disabled:not(.is-loading),
+.btn[disabled]:not(.is-loading){
+  cursor:not-allowed;filter:opacity(.5) grayscale(.15);
+  box-shadow:none;transform:none;
+}
+.btn:disabled:not(.is-loading):hover,
+.btn[disabled]:not(.is-loading):hover{background:var(--green);transform:none;box-shadow:none}
+.btn:disabled:not(.is-loading):hover .btn__ico,
+.btn[disabled]:not(.is-loading):hover .btn__ico{transform:none;background:var(--gold)}
 .btn.is-loading .btn__ico svg{display:none}
 .btn.is-loading .btn__ico::after{
   content:"";width:20px;height:20px;border-radius:50%;
@@ -276,6 +290,7 @@ svg{display:block}
   .lead .field:nth-of-type(1){animation-delay:.55s}
   .lead .field:nth-of-type(2){animation-delay:.62s}
   .lead .field:nth-of-type(3){animation-delay:.69s}
+  .lead .field:nth-of-type(4){animation-delay:.76s}
   .lead .btn{animation-delay:.85s}
   .lead__note{animation-delay:.92s}
   .stage__mark{opacity:0;animation:markIn 1.2s .8s var(--ease) forwards,float 10s 2s ease-in-out infinite alternate}
@@ -396,7 +411,19 @@ svg{display:block}
               <p class="field__err" role="alert">Kursni tanlang.</p>
             </div>
 
-            <button class="btn" type="submit" id="f-submit">
+            <div class="field" data-field="branch">
+              <label class="sr-only" for="f-branch">Qaysi filial sizga qulay?</label>
+              <select class="select is-empty" id="f-branch" name="branch" required>
+                <option value="" selected>Qaysi filial sizga qulay?</option>
+                <option value="Yashnobod">Yashnobod</option>
+                <option value="Shayxontohur">Shayxontohur</option>
+                <option value="Qibray">Qibray</option>
+                <option value="Beruniy">Beruniy</option>
+              </select>
+              <p class="field__err" role="alert">Filialni tanlang.</p>
+            </div>
+
+            <button class="btn" type="submit" id="f-submit" disabled>
               <span class="btn__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
               <span class="btn__label">Ro'yxatdan o'tish</span>
             </button>
@@ -428,24 +455,29 @@ svg{display:block}
 <script>
 (function(){
   /* ---------- SOZLAMALAR ----------
-     FORM_ENDPOINT: ma'lumotlar yuboriladigan URL (CRM, Telegram-bot webhook, Google Apps Script va h.k.).
+     FORM_ENDPOINT: Google Apps Script Web App URL'i (Sheets + Telegram).
+     >>> Deploy'dan keyingi Web App URL'ni ANIQ shu qatorga qo'ying. <<<
+     Ko'rinishi: https://script.google.com/macros/s/AKfycb.../exec
+     Batafsil qadamlar: SETUP.md faylida.
+     Sayt statik — build yo'q, shuning uchun URL to'g'ridan-to'g'ri shu yerga yoziladi.
      Bo'sh qoldirilsa — forma faqat "qabul qilindi" holatini ko'rsatadi (demo rejim).
   */
-  var FORM_ENDPOINT = "";
+  var FORM_ENDPOINT = "https://script.google.com/macros/s/AKfycby8lO2qpjBycB11Dgvcd3bvXZsx459Q-ijE7nnCu59Px6rf7j3qSdm9y7Gf5n0gJJ_YIg/exec";
 
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var form   = document.getElementById('ariza');
   var name   = document.getElementById('f-name');
   var phone  = document.getElementById('f-phone');
   var course = document.getElementById('f-course');
+  var branch = document.getElementById('f-branch');
   var submit = document.getElementById('f-submit');
   var alertBox = document.getElementById('f-alert');
   var doneText = document.getElementById('f-done-text');
 
   function syncEmpty(sel){ sel.classList.toggle('is-empty', !sel.value); }
-  [course].forEach(function(sel){
+  [course, branch].forEach(function(sel){
     syncEmpty(sel);
-    sel.addEventListener('change', function(){ syncEmpty(sel); clearError(sel); });
+    sel.addEventListener('change', function(){ syncEmpty(sel); clearError(sel); refreshSubmit(); });
   });
 
   /* Telefon maskasi: 90 123 45 67 */
@@ -460,6 +492,7 @@ svg{display:block}
     phone.value = out;
     syncMask();
     clearError(phone);
+    refreshSubmit();
   });
   /* Format doim ko'rinib turadi: yozilgan qism ustida raqam, qolgani chiziqcha */
   var MASK = '__ ___ __ __';
@@ -467,7 +500,7 @@ svg{display:block}
   var phoneWrap = phone.parentNode;
   function syncMask(){ typedEl.textContent = phone.value; restEl.textContent = MASK.slice(phone.value.length); phoneWrap.classList.toggle('has-value', phone.value.length > 0); }
   syncMask();
-  name.addEventListener('input', function(){ clearError(name); });
+  name.addEventListener('input', function(){ clearError(name); refreshSubmit(); });
 
   function fieldOf(el){ return el.closest('.field'); }
   function setError(el){
@@ -480,9 +513,20 @@ svg{display:block}
     if (!name.value.trim()) { setError(name); ok = false; first = first || name; }
     if (phone.value.replace(/\D/g,'').length !== 9) { setError(phone); ok = false; first = first || phone; }
     if (!course.value) { setError(course); ok = false; first = first || course; }
+    if (!branch.value) { setError(branch); ok = false; first = first || branch; }
     if (first) first.focus();
     return ok;
   }
+
+  /* Tugma faqat hamma majburiy maydon to'g'ri to'ldirilganda faollashadi */
+  function formValid(){
+    return name.value.trim() !== '' &&
+           phone.value.replace(/\D/g,'').length === 9 &&
+           course.value !== '' &&
+           branch.value !== '';
+  }
+  function refreshSubmit(){ submit.disabled = !formValid(); }
+  refreshSubmit(); // sahifa yuklanganda boshlang'ich holat
 
   form.addEventListener('submit', function(e){
     e.preventDefault();
@@ -493,6 +537,7 @@ svg{display:block}
       name: name.value.trim(),
       phone: '+998' + phone.value.replace(/\D/g,''),
       course: course.value,
+      branch: branch.value,
       page: location.href,
       time: new Date().toISOString()
     };
@@ -513,14 +558,18 @@ svg{display:block}
 
     if (!FORM_ENDPOINT) { setTimeout(done, 900); return; }
 
-    fetch(FORM_ENDPOINT, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
-      .then(function(r){ if (!r.ok) throw new Error(r.status); done(); })
+    /* Google Apps Script bilan ishlashi uchun: application/json header YO'Q
+       (aks holda brauzer CORS "preflight" so'raydi va so'rov bloklanadi).
+       no-cors rejimida so'rov o'tadi, ma'lumot skriptga yetib boradi.
+       Javob "opaque" bo'ladi — o'qib bo'lmaydi, shuning uchun r.ok tekshirilmaydi. */
+    fetch(FORM_ENDPOINT, {method:'POST', mode:'no-cors', body: JSON.stringify(payload)})
+      .then(done)
       .catch(fail);
   });
 
   document.getElementById('f-again').addEventListener('click', function(){
     form.classList.remove('is-done');
-    form.reset(); syncEmpty(course); syncMask();
+    form.reset(); syncEmpty(course); syncEmpty(branch); syncMask(); refreshSubmit();
     name.focus();
   });
 
