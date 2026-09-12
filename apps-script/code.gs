@@ -1,6 +1,7 @@
 /**
- * Maydan Ta'lim — forma qabul qiluvchi (Google Sheets + Telegram)
- * Bitta endpoint: ariza kelganda ham jadvalga yozadi, ham Telegram'ga yuboradi.
+ * Maydan Ta'lim — forma qabul qiluvchi (Google Sheets + Telegram + Meta Conversions API)
+ * Bitta endpoint: ariza kelganda jadvalga yozadi, Telegram'ga yuboradi va Meta'ga
+ * server tomondan Lead eventini jo'natadi (meta-capi.gs faylida).
  *
  * O'rnatish qadamlari: repodagi SETUP.md fayliga qarang.
  */
@@ -53,6 +54,10 @@ function doPost(e) {
         muteHttpExceptions: true
       });
     }
+
+    // 3) Meta Conversions API — meta-capi.gs faylida, token Script properties'da.
+    //    Xato bo'lsa ham yuqoridagi Sheets va Telegram allaqachon bajarilgan.
+    if (typeof sendMetaLead === 'function') { sendMetaLead(d); }
 
     return jsonOut({ ok: true });
   } catch (err) {
