@@ -175,3 +175,70 @@ URL o'zgarmaydi, `index.html` ga tegmaysiz.
 **Brauzer konsolida CORS xatosi**
 `fetch` chaqiruvida `mode:'no-cors'` borligini va `Content-Type` header YO'Qligini tekshiring
 (`application/json` header preflight so'roviga sabab bo'ladi va so'rov bloklanadi).
+
+---
+
+## Meta Pixel va Conversions API
+
+Saytda Meta Pixel (`918405104297839`) o'rnatilgan. Brauzer quyidagi eventlarni yuboradi:
+
+| Event | Qachon |
+|---|---|
+| PageView | sahifa ochilganda |
+| ViewContent | ariza formasi ekranda ko'ringanda |
+| FormStart *(custom)* | formani to'ldirish boshlanganda |
+| FormError *(custom)* | chala formada tugma bosilganda (`missing`) |
+| **Lead** | ariza yuborilganda (kurs, filial, `eventID`) |
+| FormSubmitFailed *(custom)* | internet xatosida |
+| Contact | telefon raqami bosilganda (qaysi joydan) |
+
+**Conversions API** — `Lead` eventini server tomondan (Apps Script) ham yuboradi.
+Reklama bloklovchi yoki iOS cheklovi brauzer eventini to'sib qo'ysa ham, server eventi yetib boradi.
+Ikkala event bir xil `event_id` bilan boradi va Meta ularni **bitta** ariza deb hisoblaydi.
+
+> **Tokenni hech qachon kodga, GitHub'ga yoki chatga yozmang.** Repo ochiq — token bilan har kim
+> sizning pixelingizga soxta event yubora oladi. Token faqat Apps Script'ning Script properties'ida turadi.
+
+### 1. Token olish
+Events Manager → **Наборы данных** → *Landing page* → **Настройки** →
+**Настройка прямой интеграции** → "Настройте с Dataset Quality API" → **Сгенерировать маркер доступа** → nusxalang.
+
+("Подключение ожидает подтверждения / Подключить" bloki — hamkor integratsiyalari uchun, bizga kerak emas.)
+
+### 2. Apps Script'ga fayl qo'shish
+Google Sheet → **Extensions → Apps Script**:
+1. Chap tomonda **+** → **Script** → nomi: `meta-capi`.
+2. Repodagi [`apps-script/meta-capi.gs`](apps-script/meta-capi.gs) ning butun mazmunini joylang → **Save**.
+
+### 3. `Code.gs` ga bitta qator
+`Code.gs` ni **butunlay almashtirmang** (unda Telegram tokeningiz bor). Faqat
+`return jsonOut({ ok: true });` qatorini toping va uning **ustiga** shu qatorni qo'shing:
+
+```javascript
+    if (typeof sendMetaLead === 'function') { sendMetaLead(d); }
+```
+
+### 4. Tokenni saqlash
+⚙ **Project Settings** → pastda **Script properties** → **Add script property**:
+
+| Property | Value |
+|---|---|
+| `META_CAPI_TOKEN` | 1-qadamdagi token |
+
+**Save script properties**.
+
+### 5. Qayta deploy
+**Deploy → Manage deployments → ✏ (Edit) → Version: New version → Deploy**.
+URL o'zgarmaydi — `index.html` ga tegmaysiz.
+
+### 6. Tekshirish
+1. Events Manager → **Тестирование событий** → server eventlari uchun berilgan kodni nusxalang (masalan `TEST12345`).
+2. Script properties'ga vaqtincha qo'shing: `META_TEST_EVENT_CODE` = shu kod.
+3. Saytda ariza yuboring. "Тестирование событий" da `Lead` **Браузер** va **Сервер** dan kelganini ko'rasiz.
+4. Apps Script → **Executions** da `Meta CAPI 200: {"events_received":1,...}` yozuvi chiqadi.
+5. **Tekshirib bo'lgach `META_TEST_EVENT_CODE` ni o'chiring** — aks holda server eventlari reklamaga hisoblanmaydi.
+
+### Meta'ga nima yuboriladi
+- Telefon, ism (birinchi so'z), mamlakat — **faqat SHA-256 xesh** ko'rinishida, ochiq holda emas.
+- `_fbp` / `_fbc` (pixel qo'ygan brauzer identifikatorlari), brauzer user-agent, sahifa manzili, kurs, filial.
+- Endpoint URL ochiq bo'lgani uchun Meta'ga faqat to'g'ri formatdagi (`+998` + 9 raqam) ariza ketadi.

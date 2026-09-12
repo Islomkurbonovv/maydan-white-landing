@@ -429,8 +429,26 @@ svg{display:block}
   .top__phone{width:44px;padding:0;justify-content:center}
 }
 </style>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '918405104297839');
+fbq('track', 'PageView');
+</script>
+<!-- End Meta Pixel Code -->
 </head>
 <body>
+<!-- Meta Pixel: JavaScript o'chiq bo'lsa -->
+<noscript><img height="1" width="1" style="display:none" alt=""
+src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
+/></noscript>
 
 <!-- Logo belgilari -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -577,6 +595,37 @@ svg{display:block}
                   branch:document.getElementById('d-branch'),
                   phone: document.getElementById('d-phone')};
 
+  /* ---------- META PIXEL EVENTLARI ----------
+     Bazaviy kod <head> da: init + PageView. Bu yerda sahifadagi harakatlar:
+       ViewContent               — ariza formasi ekranda ko'rindi (sahifa ochilishida 1 marta)
+       FormStart        (custom) — formani to'ldirish boshlandi (har bir ariza uchun 1 marta)
+       FormError        (custom) — tugma bosildi, maydonlar to'liq emas (missing: qaysilari)
+       Lead                      — ariza yuborildi (content_name: kurs, content_category: filial)
+       FormSubmitFailed (custom) — tarmoq xatosi, ariza yetib bormadi
+       Contact                   — telefon raqamiga bosildi (content_name: qaysi joydan)
+     Ism va telefon Meta'ga YUBORILMAYDI.
+     Reklama bloklovchi pixelni to'sib qo'ysa ham forma ishlayveradi: track() hech qachon xato otmaydi. */
+  function track(kind, event, params, opts){
+    try {
+      if (typeof window.fbq !== 'function') return;
+      var args = [kind, event, params || {}];
+      if (opts) args.push(opts);
+      window.fbq.apply(window, args);
+    } catch (_) {}
+  }
+  /* Conversions API moslashtirishi uchun: pixel o'zi qo'yadigan brauzer ID cookie'lari.
+     _fbc bo'lmasa, reklamadan kelgan havoladagi fbclid dan Meta formatida tuziladi. */
+  function readCookie(key){
+    var m = document.cookie.match(new RegExp('(?:^|; )' + key + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  function fbcFromUrl(){
+    try { var id = new URLSearchParams(location.search).get('fbclid'); return id ? 'fb.1.' + Date.now() + '.' + id : ''; }
+    catch (_) { return ''; }
+  }
+  var started = false;
+  function markStarted(){ if (started) return; started = true; track('trackCustom', 'FormStart'); }
+
   /* Kirish animatsiyasi oynasi (eng kechi: .lead__note, 0.92s + 0.6s) tugagach
      forma elementlarining ko'rinishini animatsiyadan uzib qo'yamiz — batafsil
      izoh CSS dagi `.lead.entered` qoidasi yonida. Fon tabda taymer sekinlashadi,
@@ -632,14 +681,16 @@ svg{display:block}
   /* Tugma HECH QACHON o'chirilmaydi. Foydalanuvchi bosadi — va nimasi
      yetishmayotganini aniq o'qiydi. O'chirilgan tugma "nega bosilmayapti?"
      degan savol qoldiradi, bu esa aniq javob beradi. */
-  function missingFields(){
+  var LABELS = {name:'ismingiz', phone:'telefon raqamingiz', course:'kurs', branch:'filial'};
+  function missingKeys(){
     var m = [];
-    if (!name.value.trim()) m.push('ismingiz');
-    if (phone.value.replace(/\D/g,'').length !== 9) m.push('telefon raqamingiz');
-    if (!course.value) m.push('kurs');
-    if (!branch.value) m.push('filial');
+    if (!name.value.trim()) m.push('name');
+    if (phone.value.replace(/\D/g,'').length !== 9) m.push('phone');
+    if (!course.value) m.push('course');
+    if (!branch.value) m.push('branch');
     return m;
   }
+  function missingFields(){ return missingKeys().map(function(k){ return LABELS[k]; }); }
   function showWarn(){
     var m = missingFields(), n = m.length;
     if (!n) { hideWarn(); return; }
@@ -653,7 +704,11 @@ svg{display:block}
   form.addEventListener('submit', function(e){
     e.preventDefault();
     alertBox.classList.remove('is-on');
-    if (!validate()) { showWarn(); return; }
+    if (!validate()) {
+      showWarn();
+      track('trackCustom', 'FormError', {missing: missingKeys().join(',')});
+      return;
+    }
     hideWarn();
 
     var payload = {
@@ -662,7 +717,11 @@ svg{display:block}
       course: course.value,
       branch: branch.value,
       page: location.href,
-      time: new Date().toISOString()
+      time: new Date().toISOString(),
+      event_id: 'lead-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+      fbp: readCookie('_fbp'),
+      fbc: readCookie('_fbc') || fbcFromUrl(),
+      ua: navigator.userAgent
     };
 
     submit.disabled = true; submit.classList.add('is-loading');
@@ -676,6 +735,7 @@ svg{display:block}
       form.classList.add('is-done');
       setTimeout(function(){ form.classList.add('done-shown'); }, 900);
       submit.disabled = false; submit.classList.remove('is-loading');
+      track('track', 'Lead', {content_name: payload.course, content_category: payload.branch}, {eventID: payload.event_id});
       /* Sahifa ATAYLAB surilmaydi: forma va bu ekran bitta grid katakda,
          karta balandligi o'zgarmaydi — hech narsa qimirlamasligi kerak. */
     }
@@ -683,6 +743,7 @@ svg{display:block}
     function fail(){
       alertBox.classList.add('is-on');
       submit.disabled = false; submit.classList.remove('is-loading');
+      track('trackCustom', 'FormSubmitFailed', {content_name: payload.course, content_category: payload.branch});
     }
 
     if (!FORM_ENDPOINT) { setTimeout(done, 900); return; }
@@ -700,8 +761,38 @@ svg{display:block}
     form.classList.remove('is-done','done-shown');
     form.reset(); syncEmpty(course); syncEmpty(branch); syncMask();
     hideWarn(); alertBox.classList.remove('is-on');
+    started = false;
     [name, phone, course, branch].forEach(clearError);
     name.focus();
+  });
+
+  /* FormStart: faqat haqiqiy kiritish (input/change). focus emas — validate() va
+     "Yana bir kishini yozish" dasturiy focus qiladi, u boshlash hisoblanmaydi. */
+  form.addEventListener('input', markStarted);
+  form.addEventListener('change', markStarted);
+
+  /* ViewContent: forma kamida 30% ko'ringanda, bir marta */
+  if ('IntersectionObserver' in window) {
+    var vcObserver = new IntersectionObserver(function(entries){
+      if (!entries[0].isIntersecting) return;
+      track('track', 'ViewContent', {content_name: 'Ariza formasi'});
+      vcObserver.disconnect();
+    }, {threshold: 0.3});
+    vcObserver.observe(form);
+  } else {
+    track('track', 'ViewContent', {content_name: 'Ariza formasi'});
+  }
+
+  /* Contact: sahifadagi istalgan tel: havolasi — qaysi joydan bosilgani bilan */
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href^="tel:"]');
+    if (!a) return;
+    var where = a.classList.contains('top__phone') ? 'Header'
+              : a.classList.contains('bar__tel')   ? 'Mobil panel'
+              : a.classList.contains('done__call') ? 'Ariza qabul qilindi ekrani'
+              : a.closest('#f-alert')              ? 'Xato xabari'
+              : 'Boshqa';
+    track('track', 'Contact', {content_name: where});
   });
 
   /* Mobil pastki panel: forma ko'rinmayotganda chiqadi */
