@@ -35,6 +35,7 @@ function doPost(e) {
     if (sh.getLastRow() === 0) {
       sh.appendRow(['Sana', 'Ism', 'Telefon', 'Kurs', 'Filial', 'Sahifa']);
     }
+    // "Kurs" ustuni eski qatorlar bilan moslik uchun saqlanadi (yangi arizalarda bo'sh)
     sh.appendRow([new Date(), name, phone, course, branch, page]);
 
     // 2) Telegram — token/chat_id to'ldirilmagan bo'lsa o'tkazib yuboriladi
@@ -43,9 +44,10 @@ function doPost(e) {
         "Yangi ariza — Maydan Ta'lim",
         '',
         'Ism: ' + name,
-        'Telefon: ' + phone,
-        'Kurs: ' + course
+        'Telefon: ' + phone
       ];
+      // Formada kurs maydoni hozir yo'q — bo'sh kelsa Telegram'da "Kurs:" qatori chiqmaydi
+      if (course) { lines.push('Kurs: ' + course); }
       if (branch) { lines.push('Filial: ' + branch); }
 
       UrlFetchApp.fetch('https://api.telegram.org/bot' + TELEGRAM_TOKEN + '/sendMessage', {
