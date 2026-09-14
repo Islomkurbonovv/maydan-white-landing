@@ -133,6 +133,10 @@ svg{display:block}
   display:grid;
 }
 .lead__body,.lead__done{grid-column:1;grid-row:1;min-width:0}
+/* Desktop: forma va "qabul qilindi" ekrani bitta katakda, katak balandligi ikkalasining
+   kattasiga teng — ariza yuborilganda karta balandligi o'zgarmaydi, sahifa sakramaydi.
+   Forma qisqaroq bo'lgani uchun ortiqcha joy pastda to'planmasin: forma katak o'rtasida. */
+@media (min-width:901px){ .lead__body{align-self:center} }
 .field{margin-top:14px}
 .field:first-child{margin-top:0}
 .input,.select{
@@ -279,7 +283,10 @@ svg{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
 .lead__done h2{font-size:clamp(22px,2.2vw,26px);font-weight:600;letter-spacing:-.022em;line-height:1.2}
-.done__lead{margin-top:10px;max-width:34ch;color:var(--ink-2);font-size:15.5px;line-height:1.5}
+/* min-height 3 qator: placeholder matni ism qo'yilgan matndan bir qator qisqa. Joy oldindan
+   ajratilmasa, ariza yuborilganda ekran balandligi o'zgaradi va desktopda markazlashgan
+   karta ~12px sakraydi. */
+.done__lead{margin-top:10px;max-width:34ch;min-height:4.5em;color:var(--ink-2);font-size:15.5px;line-height:1.5}
 .done__lead b{color:var(--ink);font-weight:600;white-space:nowrap}
 
 /* Ariza xulosasi — nozik chiziqli ro'yxat */
@@ -357,7 +364,6 @@ svg{display:block}
   .lead .field:nth-of-type(1){animation-delay:.55s}
   .lead .field:nth-of-type(2){animation-delay:.62s}
   .lead .field:nth-of-type(3){animation-delay:.69s}
-  .lead .field:nth-of-type(4){animation-delay:.76s}
   .lead .btn{animation-delay:.85s}
   .lead__note{animation-delay:.92s}
   /* Tugma: puls halqasi, yaltirash va strelkaning yengil turtishi */
@@ -413,6 +419,13 @@ svg{display:block}
   /* Muvaffaqiyat ekrani mobilda: karta chegarasi yo'q, shuning uchun
      o'z nafas oladigan joyi va yumshoq foni bo'lsin */
   .lead__done{padding:18px 0;border:0;border-radius:0;background:none}
+  /* Mobilda karta vertikal markazlashmagan: balandlik o'zgarsa faqat PASTGA o'sadi,
+     yuqoridagi hech narsa siljimaydi. Ko'rinmayotgan panel absolute bo'lib katak
+     balandligiga ta'sir qilmaydi — forma ostida bo'sh joy qolmaydi. */
+  .lead{position:relative}
+  .lead__done{position:absolute;top:0;left:0;right:0}
+  .lead.is-done .lead__done{position:relative}
+  .lead.is-done .lead__body{position:absolute;top:0;left:0;right:0}
   .lead__check{width:68px;height:68px;margin-bottom:16px}
   .done__recap{max-width:100%;margin-top:18px}
   .done__call{margin-top:16px;height:50px}
@@ -504,19 +517,6 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
               <p class="field__err" role="alert">Telefon raqamini to'liq kiriting: 9 ta raqam.</p>
             </div>
 
-            <div class="field" data-field="course">
-              <label class="sr-only" for="f-course">Qaysi kursga yozilmoqchisiz?</label>
-              <select class="select is-empty" id="f-course" name="course" required>
-                <option value="" selected>Qaysi kursga yozilmoqchisiz?</option>
-                <option value="Ingliz tili">Ingliz tili</option>
-                <option value="Arab tili">Arab tili</option>
-                <option value="Rus tili">Rus tili</option>
-                <option value="Matematika">Matematika</option>
-                <option value="Pochemuchka (Maktabga tayyorlov)">Pochemuchka (Maktabga tayyorlov)</option>
-              </select>
-              <p class="field__err" role="alert">Kursni tanlang.</p>
-            </div>
-
             <div class="field" data-field="branch">
               <label class="sr-only" for="f-branch">Qaysi filial sizga qulay?</label>
               <select class="select is-empty" id="f-branch" name="branch" required>
@@ -542,7 +542,6 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
             <h2>Arizangiz qabul qilindi</h2>
             <p class="done__lead" id="f-done-text">Rahmat! Menejerlarimiz ish vaqtida qo'ng'iroq qilib, batafsil ma'lumot berishadi.</p>
             <dl class="done__recap">
-              <div><dt>Kurs</dt><dd id="d-course">&mdash;</dd></div>
               <div><dt>Filial</dt><dd id="d-branch">&mdash;</dd></div>
               <div><dt>Telefon</dt><dd id="d-phone">&mdash;</dd></div>
             </dl>
@@ -583,15 +582,13 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
   var form   = document.getElementById('ariza');
   var name   = document.getElementById('f-name');
   var phone  = document.getElementById('f-phone');
-  var course = document.getElementById('f-course');
   var branch = document.getElementById('f-branch');
   var submit = document.getElementById('f-submit');
   var alertBox = document.getElementById('f-alert');
   var warnBox  = document.getElementById('f-warn');
   var warnText = document.getElementById('f-warn-text');
   var doneText = document.getElementById('f-done-text');
-  var recap    = {course:document.getElementById('d-course'),
-                  branch:document.getElementById('d-branch'),
+  var recap    = {branch:document.getElementById('d-branch'),
                   phone: document.getElementById('d-phone')};
 
   /* ---------- META PIXEL EVENTLARI ----------
@@ -599,7 +596,7 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
        ViewContent               — ariza formasi ekranda ko'rindi (sahifa ochilishida 1 marta)
        FormStart        (custom) — formani to'ldirish boshlandi (har bir ariza uchun 1 marta)
        FormError        (custom) — tugma bosildi, maydonlar to'liq emas (missing: qaysilari)
-       Lead                      — ariza yuborildi (content_name: kurs, content_category: filial)
+       Lead                      — ariza yuborildi (content_category: filial)
        FormSubmitFailed (custom) — tarmoq xatosi, ariza yetib bormadi
        Contact                   — telefon raqamiga bosildi (content_name: qaysi joydan)
      Ism va telefon Meta'ga YUBORILMAYDI.
@@ -632,7 +629,7 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
   setTimeout(function(){ form.classList.add('entered'); }, 1800);
 
   function syncEmpty(sel){ sel.classList.toggle('is-empty', !sel.value); }
-  [course, branch].forEach(function(sel){
+  [branch].forEach(function(sel){
     syncEmpty(sel);
     sel.addEventListener('change', function(){ syncEmpty(sel); clearError(sel); refreshWarn(); });
   });
@@ -671,7 +668,6 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
     var ok = true, first = null;
     if (!name.value.trim()) { setError(name); ok = false; first = first || name; }
     if (phone.value.replace(/\D/g,'').length !== 9) { setError(phone); ok = false; first = first || phone; }
-    if (!course.value) { setError(course); ok = false; first = first || course; }
     if (!branch.value) { setError(branch); ok = false; first = first || branch; }
     if (first) first.focus();
     return ok;
@@ -680,12 +676,11 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
   /* Tugma HECH QACHON o'chirilmaydi. Foydalanuvchi bosadi — va nimasi
      yetishmayotganini aniq o'qiydi. O'chirilgan tugma "nega bosilmayapti?"
      degan savol qoldiradi, bu esa aniq javob beradi. */
-  var LABELS = {name:'ismingiz', phone:'telefon raqamingiz', course:'kurs', branch:'filial'};
+  var LABELS = {name:'ismingiz', phone:'telefon raqamingiz', branch:'filial'};
   function missingKeys(){
     var m = [];
     if (!name.value.trim()) m.push('name');
     if (phone.value.replace(/\D/g,'').length !== 9) m.push('phone');
-    if (!course.value) m.push('course');
     if (!branch.value) m.push('branch');
     return m;
   }
@@ -713,7 +708,6 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
     var payload = {
       name: name.value.trim(),
       phone: '+998' + phone.value.replace(/\D/g,''),
-      course: course.value,
       branch: branch.value,
       page: location.href,
       time: new Date().toISOString(),
@@ -728,21 +722,20 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
     function done(){
       var pretty = payload.phone.replace(/(\+998)(\d{2})(\d{3})(\d{2})(\d{2})/,'$1\u00A0$2\u00A0$3\u00A0$4\u00A0$5');
       doneText.innerHTML = 'Rahmat, <b>' + esc(payload.name) + "</b>! Menejerlarimiz ish vaqtida qo'ng'iroq qilib, batafsil ma'lumot berishadi.";
-      recap.course.textContent = payload.course;
       recap.branch.textContent = payload.branch;
       recap.phone.textContent  = pretty;
       form.classList.add('is-done');
       setTimeout(function(){ form.classList.add('done-shown'); }, 900);
       submit.disabled = false; submit.classList.remove('is-loading');
-      track('track', 'Lead', {content_name: payload.course, content_category: payload.branch}, {eventID: payload.event_id});
-      /* Sahifa ATAYLAB surilmaydi: forma va bu ekran bitta grid katakda,
-         karta balandligi o'zgarmaydi — hech narsa qimirlamasligi kerak. */
+      track('track', 'Lead', {content_category: payload.branch}, {eventID: payload.event_id});
+      /* Sahifa ATAYLAB surilmaydi. Desktopda karta balandligi o'zgarmaydi;
+         mobilda karta faqat pastga o'sadi — yuqoridagi hech narsa siljimaydi. */
     }
     function esc(t){ var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
     function fail(){
       alertBox.classList.add('is-on');
       submit.disabled = false; submit.classList.remove('is-loading');
-      track('trackCustom', 'FormSubmitFailed', {content_name: payload.course, content_category: payload.branch});
+      track('trackCustom', 'FormSubmitFailed', {content_category: payload.branch});
     }
 
     if (!FORM_ENDPOINT) { setTimeout(done, 900); return; }
@@ -758,10 +751,10 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
 
   document.getElementById('f-again').addEventListener('click', function(){
     form.classList.remove('is-done','done-shown');
-    form.reset(); syncEmpty(course); syncEmpty(branch); syncMask();
+    form.reset(); syncEmpty(branch); syncMask();
     hideWarn(); alertBox.classList.remove('is-on');
     started = false;
-    [name, phone, course, branch].forEach(clearError);
+    [name, phone, branch].forEach(clearError);
     name.focus();
   });
 

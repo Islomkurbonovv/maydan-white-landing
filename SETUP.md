@@ -146,9 +146,10 @@ Birinchi ariza kelganda **Arizalar** varag'i va sarlavha qatori avtomatik yarati
 
 | Sana | Ism | Telefon | Kurs | Filial | Sahifa |
 |---|---|---|---|---|---|
-| 2026-09-05 14:32 | Islom | +998901234567 | Ingliz tili | Yashnobod | https://… |
+| 2026-09-05 14:32 | Islom | +998901234567 |  | Yashnobod | https://… |
 
-Formada 4 ta majburiy maydon bor: **Ism, Telefon, Kurs, Filial**.
+Formada 3 ta majburiy maydon bor: **Ism, Telefon, Filial**.
+"Kurs" ustuni eski arizalar bilan moslik uchun jadvalda qoladi, yangi arizalarda bo'sh bo'ladi.
 Hammasi to'ldirilmaguncha "Ro'yxatdan o'tish" tugmasi xira turadi va bosilmaydi.
 
 Filiallar ro'yxatini o'zgartirish kerak bo'lsa — `index.html` da `f-branch` ni qidiring
@@ -188,7 +189,7 @@ Saytda Meta Pixel (`918405104297839`) o'rnatilgan. Brauzer quyidagi eventlarni y
 | ViewContent | ariza formasi ekranda ko'ringanda |
 | FormStart *(custom)* | formani to'ldirish boshlanganda |
 | FormError *(custom)* | chala formada tugma bosilganda (`missing`) |
-| **Lead** | ariza yuborilganda (kurs, filial, `eventID`) |
+| **Lead** | ariza yuborilganda (filial, `eventID`) |
 | FormSubmitFailed *(custom)* | internet xatosida |
 | Contact | telefon raqami bosilganda (qaysi joydan) |
 
@@ -240,5 +241,5 @@ URL o'zgarmaydi — `index.html` ga tegmaysiz.
 
 ### Meta'ga nima yuboriladi
 - Telefon, ism (birinchi so'z), mamlakat — **faqat SHA-256 xesh** ko'rinishida, ochiq holda emas.
-- `_fbp` / `_fbc` (pixel qo'ygan brauzer identifikatorlari), brauzer user-agent, sahifa manzili, kurs, filial.
+- `_fbp` / `_fbc` (pixel qo'ygan brauzer identifikatorlari), brauzer user-agent, sahifa manzili, filial.
 - Endpoint URL ochiq bo'lgani uchun Meta'ga faqat to'g'ri formatdagi (`+998` + 9 raqam) ariza ketadi.
