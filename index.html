@@ -234,7 +234,6 @@ svg{display:block}
 .btn{justify-content:flex-start}
 .btn .btn__label{flex:1;text-align:center}
 .lead .btn{margin-top:18px}
-.lead__note{margin:12px 22px 0;font-size:13px;line-height:1.45;color:var(--ink-3)}
 .lead__alert{
   display:none;margin-top:14px;padding:12px 14px;border-radius:12px;
   background:#FBEAE8;color:#8C1D16;font-size:14.5px;
@@ -364,12 +363,11 @@ svg{display:block}
   .card{opacity:0;animation:cardIn .8s .1s var(--ease) forwards}
   .h1,.sub{opacity:0;animation:fadeUp .6s var(--ease) forwards}
   .h1{animation-delay:.38s}.sub{animation-delay:.46s}
-  .lead .field,.lead .btn,.lead__note{opacity:0;animation:fadeUp .6s var(--ease) forwards}
+  .lead .field,.lead .btn{opacity:0;animation:fadeUp .6s var(--ease) forwards}
   .lead .field:nth-of-type(1){animation-delay:.55s}
   .lead .field:nth-of-type(2){animation-delay:.62s}
   .lead .field:nth-of-type(3){animation-delay:.69s}
   .lead .btn{animation-delay:.85s}
-  .lead__note{animation-delay:.92s}
   /* Tugma: puls halqasi, yaltirash va strelkaning yengil turtishi */
   .btn{animation:pulse 2.8s 1.6s ease-out infinite}
   .btn::after{animation:sheen 4.2s 2s ease-in-out infinite}
@@ -399,8 +397,7 @@ svg{display:block}
    (2) sahifa fon tabda ochilsa — animatsiya muzlab, element 0% da qoladi.
    Shu sababli JS 1.8s dan keyin .entered qo'yadi va opacity qat'iy 1 bo'ladi. */
 .lead.entered .field,
-.lead.entered .btn,
-.lead.entered .lead__note{opacity:1;animation:none}
+.lead.entered .btn{opacity:1;animation:none}
 .lead.is-done.done-shown .lead__done>*{opacity:1;animation:none}
 
 @media (prefers-reduced-motion:reduce){
@@ -544,7 +541,6 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
             </button>
             <p class="lead__warn" role="alert" id="f-warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg><span id="f-warn-text"></span></p>
             <p class="lead__alert" role="alert" id="f-alert">Yuborilmadi. Qayta urinib ko'ring yoki qo'ng'iroq qiling: <a href="tel:+998785550330">+998 78 555 03 30</a></p>
-            <p class="lead__note">Tugmani bosib, shaxsiy ma'lumotlarni qayta ishlashga rozilik bildirasiz.</p>
           </div>
 
           <div class="lead__done" aria-live="polite">
@@ -632,7 +628,7 @@ src="https://www.facebook.com/tr?id=918405104297839&ev=PageView&noscript=1"
   var started = false;
   function markStarted(){ if (started) return; started = true; track('trackCustom', 'FormStart'); }
 
-  /* Kirish animatsiyasi oynasi (eng kechi: .lead__note, 0.92s + 0.6s) tugagach
+  /* Kirish animatsiyasi oynasi (eng kechi: tugma, 0.85s + 0.6s) tugagach
      forma elementlarining ko'rinishini animatsiyadan uzib qo'yamiz — batafsil
      izoh CSS dagi `.lead.entered` qoidasi yonida. Fon tabda taymer sekinlashadi,
      lekin baribir ishga tushadi, shuning uchun element hech qachon yo'qolmaydi. */
